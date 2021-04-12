@@ -108,6 +108,7 @@ func (c *Operator) createOrUpdateRuleConfigMaps(ctx context.Context, p *monitori
 
 	// Simply deleting old ConfigMaps and creating new ones for now. Could be
 	// replaced by logic that only deletes obsolete ConfigMaps in the future.
+	// TODO 没有直接Update， 而是先Delete再Create
 	for _, cm := range currentConfigMaps {
 		err := cClient.Delete(ctx, cm.Name, metav1.DeleteOptions{})
 		if err != nil {
@@ -301,6 +302,9 @@ func makeRulesConfigMap(p *monitoringv1.Prometheus, ruleFiles map[string]string)
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   prometheusRuleConfigMapName(p.Name),
 			Labels: labels,
+			// TODO 设置OwnerReferences，方便级联清理 & 在子资源变动时通过EnqueueRequestForOwner通知到它的Owner
+			//  这里没有通过watch + EnqueueRequestForOwner的方式实现子资源变动通知owner，而是通过为每一种子资源实现自己的informer
+			//  EventHandler来完成往owner的event queue里面添加变动事件来实现这个逻辑，殊途同归，但是这样写不推荐，有现成的轮子干嘛不用呢
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion:         p.APIVersion,

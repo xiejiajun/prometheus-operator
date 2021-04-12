@@ -427,8 +427,10 @@ func (c *Operator) Run(ctx context.Context) error {
 		return nil
 	}
 
+	// TODO 监听CRD资源变化
 	go c.worker(ctx)
 
+	// TODO 启动CRD informer
 	go c.promInfs.Start(ctx.Done())
 	go c.smonInfs.Start(ctx.Done())
 	go c.pmonInfs.Start(ctx.Done())
@@ -444,6 +446,7 @@ func (c *Operator) Run(ctx context.Context) error {
 	if err := c.waitForCacheSync(ctx); err != nil {
 		return err
 	}
+	// TODO 注册informer eventHandler， 通过informer eventHandler将CRD event入队， 然后c.worker那边处理
 	c.addHandlers()
 
 	if c.kubeletSyncEnabled {
@@ -1139,7 +1142,9 @@ func (c *Operator) handleStatefulSetUpdate(oldo, curo interface{}) {
 	}
 }
 
+// TODO 处理CRD变动事件(对标使用kubebuilder/operator-sdk等脚手架时的Reconcile方法
 func (c *Operator) sync(ctx context.Context, key string) error {
+	// TODO 获取CRD对象
 	pobj, err := c.promInfs.Get(key)
 
 	if apierrors.IsNotFound(err) {
@@ -1161,6 +1166,7 @@ func (c *Operator) sync(ctx context.Context, key string) error {
 	}
 
 	level.Info(c.logger).Log("msg", "sync prometheus", "key", key)
+	// TODO 根据CRD创建或者更新相关的子资源对象
 	ruleConfigMapNames, err := c.createOrUpdateRuleConfigMaps(ctx, p)
 	if err != nil {
 		return err
